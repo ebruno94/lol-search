@@ -5,14 +5,14 @@ module.exports = function(config) {
     basePath: '',
     frameworks: ['jquery-3.2.1', 'jasmine'],
     files: [
-      'src/js/*.js',
+      'src/src/*.js',
       'spec/*spec.js'
     ],
     webpack: webpackConfig,
     exclude: [
     ],
     preprocessors: {
-      'src/js/*.js': ['webpack'],
+      'src/src/*.js': ['webpack'],
       'spec/*spec.js': ['webpack']
     },
     plugins: [
