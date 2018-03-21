@@ -1,0 +1,26 @@
+#pokeRow {
+  padding: 15px;
+}
+
+.col-md-2 {
+  padding: 15px;
+}
+
+.pokeCard {
+  border: 1px solid black;
+  radius: 10px;
+  box-shadow: 0 0 5px black;
+  background-color: yellow;
+}
+
+.pokeCard {
+  text-align: center;
+}
+
+img {
+  display: block;
+  margin-right: auto;
+  margin-left: auto;
+  width: 200px !important;
+  height: 200px !important;
+}
