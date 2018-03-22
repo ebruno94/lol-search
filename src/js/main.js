@@ -1,102 +1,51 @@
 import $ from 'jquery';
 var md5 = require('md5');
 import { pong } from './pong.js';
+var Promise = require('es6-promise-polyfill').Promise;
+import { pokeApi } from './pokeApi.js';
 
 $(document).ready(function() {
-  function showAll(){
-    $("#pokeRow").empty();
-    for (let i = 1; i <= 800; i++) {
-      $.ajax({
-        url: `http://pokeapi.co/api/v2/pokemon-form/${i}`,
-        type: 'GET',
-        crossDomain: true,
-        jsonpCallback: 'callback',
-        dataType: 'JSON'
-      })
-      .then(function(pokemon){
-          console.log(pokemon.name);
-          const pokedexIndex = (function(){
-            const iString = (i).toString();
-            const myLength = iString.length;
-            if (length === 1) return ("00" + iString);
-            if (length === 2) return ("0" + iString);
-            return iString;
-          })();
-          $("#pokeRow").append(`<div class="col-md-2">
-                                  <a href="https://www.serebii.net/pokedex-sm/${pokedexIndex}.shtml">
-                                    <div class="pokeCard" id="p${pokemon.id}">
-                                      <h4 class="pokeName">${(pokemon.name).toUpperCase()}</h4>
-                                      <img src=${pokemon.sprites.front_default}>
-                                      <p class="pokeBlurb">${pokemon.is_battle_only}</p>
-                                    </div>
-                                  </a>
-                                </div>
-                                    `);
-          return pokemon;
-      })
-      .then(function(pokemon){
-          $.ajax({
-            url: `http://pokeapi.co/api/v2/characteristic/${i}`,
-            type: 'GET',
-            crossDomain: true,
-            jsonpCallback: 'callback',
-            dataType: 'JSON',
-            success: function(response){
-              console.log(response.descriptions[1].description);
-              $(`#p${i} .pokeBlurb`).text(response.descriptions[1].description);
-          }
-        });
-      })
-    };
-  }
+
   $("#showPoke").click(function(){
     $("#pokeRow").empty();
-    const urlInput = $("#pokeInput").val();
-    $.ajax({
-      url: `http://pokeapi.co/api/v2/pokemon-form/${urlInput}`,
-      type: 'GET',
-      crossDomain: true,
-      jsonpCallback: 'callback',
-      dataType: 'JSON'
+    const pokemonName = $("#pokeInput").val();
+    pokeApi.getPokemon(pokemonName)
+    .then(function(response){
+      let pokemon = JSON.parse(response);
+      let speciesName = pokemon.species.name;
+      $('#pokeRow').append(`<div class="col-md-2">
+                <div class="pokeCard">
+                  <h4 class="pokemonName">${pokemon.name.toUpperCase()}</h4>
+                  <img src="${pokemon.sprites.front_default}" class="pokemonImgUrl" alt="">
+                  <p class="evolutions">Evolutions: </p>
+                </div>`);
+      return pokeApi.getSpecies(speciesName);
     })
-    .then(function(pokemon){
-        console.log(pokemon.name);
-        const pokedexIndex = (function(){
-          const iString = (pokemon.id).toString();
-          const myLength = iString.length;
-          if (myLength === 1) return ("00" + iString);
-          if (myLength === 2) return ("0" + iString);
-          return iString;
+    .then(function(response){
+      let species = JSON.parse(response);
+      let evolutionChainIdString = species.evolution_chain.url;
+      let evolutionChainId = (function(){
+        let startIndex = (function(){
+          for (let i = evolutionChainIdString.length-2; i >= 0; i--){
+            if (evolutionChainIdString[i] === '/') return i+1;
+          }
         })();
-        $("#pokeRow").append(`<div class="col-md-2">
-                                <a href="https://www.serebii.net/pokedex-sm/${pokedexIndex}.shtml">
-                                  <div class="pokeCard">
-                                    <h4 class="pokeName">${(pokemon.name).toUpperCase()}</h4>
-                                    <img src=${pokemon.sprites.front_default}>
-                                    <p class="pokeBlurb">${pokemon.is_battle_only}</p>
-                                  </div>
-                                </a>
-                              </div>
-                                  `);
-        return pokemon;
+        console.log(startIndex);
+        return evolutionChainIdString.substr(startIndex ,evolutionChainIdString.length-1);
+      })();
+      return pokeApi.getEvolutionChain(evolutionChainId);
     })
-    .then(function(pokemon){
-        $.ajax({
-          url: `http://pokeapi.co/api/v2/characteristic/${pokemon.id}`,
-          type: 'GET',
-          crossDomain: true,
-          jsonpCallback: 'callback',
-          dataType: 'JSON',
-          success: function(response){
-            console.log(response.descriptions[1].description);
-            $(".pokeBlurb").text(response.descriptions[1].description);
-        }
+    .then(function(response){
+      let evolutionChain = JSON.parse(response);
+      let evolutionArray = [];
+      evolutionChain.chain.evolves_to.forEach(function(pokemon){
+        evolutionArray.push(pokemon.species.name);
       });
+      let evolutionString = evolutionArray.join(", ").toUpperCase();
+      $(".evolutions").append(evolutionString);
     })
   });
-  $("#pokeShowAll").click(function(){
-    showAll();
-  })
+
   window.onkeydown = function(e){
     console.log(e.keyCode);
     pong.movePaddle(e.keyCode);
